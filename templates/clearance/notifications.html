@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — NUM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-bell me-2"></i>Notifications</h1>
+</div>
+
+<div class="num-card">
+  <div class="card-title">
+    <i class="bi bi-bell-fill me-2"></i>
+    All Notifications
+    <span class="badge ms-2"
+          style="background:var(--num-navy); color:white;">
+      {{ notifications|length }}
+    </span>
+  </div>
+
+  {% if notifications %}
+    <div class="d-flex flex-column gap-3">
+      {% for notif in notifications %}
+        <div class="p-3 rounded"
+             style="border: 1px solid var(--num-border);
+                    background: {% if not notif.is_read %}
+                      #eaf2fb
+                    {% else %}
+                      #ffffff
+                    {% endif %};">
+          <div class="d-flex align-items-start gap-3">
+            <div style="margin-top:3px;">
+              {% if 'Approved' in notif.title or 'Cleared' in notif.title %}
+                <i class="bi bi-check-circle-fill fs-5"
+                   style="color:var(--num-green);"></i>
+              {% elif 'Declined' in notif.title %}
+                <i class="bi bi-x-circle-fill fs-5"
+                   style="color:var(--num-red);"></i>
+              {% elif 'Queue' in notif.title or 'Request' in notif.title %}
+                <i class="bi bi-inbox-fill fs-5"
+                   style="color:var(--num-gold);"></i>
+              {% else %}
+                <i class="bi bi-info-circle-fill fs-5"
+                   style="color:var(--num-navy);"></i>
+              {% endif %}
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-bold small"
+                   style="color:var(--num-navy);">
+                {{ notif.title }}
+                {% if not notif.is_read %}
+                  <span class="badge ms-1"
+                        style="background:var(--num-gold);
+                               color:white;
+                               font-size:0.65rem;">
+                    New
+                  </span>
+                {% endif %}
+              </div>
+              <div class="small text-muted mt-1">
+                {{ notif.message }}
+              </div>
+              <div class="small text-muted mt-1"
+                   style="font-size:0.75rem;">
+                <i class="bi bi-clock me-1"></i>
+                {{ notif.created_at|date:"d M Y, g:i A" }}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-bell-slash"
+         style="font-size:3rem; opacity:0.3;"></i>
+      <p class="mt-3">No notifications yet.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

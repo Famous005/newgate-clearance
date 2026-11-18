@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Approval History — NUM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-clock-history me-2"></i>My Approval History</h1>
+</div>
+
+<div class="num-card">
+  <div class="card-title">
+    <i class="bi bi-journal-check me-2"></i>
+    {% if unit %}{{ unit.name }} — {% endif %}Past Actions
+  </div>
+
+  {% if approvals %}
+    <div class="table-responsive">
+      <table class="table num-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Matric No.</th>
+            <th>Session</th>
+            <th>Decision</th>
+            <th>Remarks</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for approval in approvals %}
+            <tr>
+              <td>
+                {{ approval.request.student.get_full_name }}
+              </td>
+              <td>
+                {{ approval.request.student.matric_number }}
+              </td>
+              <td>{{ approval.request.session_year }}</td>
+              <td>
+                <span class="status-badge badge-{{ approval.status }}">
+                  {{ approval.status|capfirst }}
+                </span>
+              </td>
+              <td class="small text-muted">
+                {{ approval.remarks|default:"—" }}
+              </td>
+              <td>
+                {{ approval.actioned_at|date:"d M Y, g:i A" }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="bi bi-journal fs-2"></i>
+      <p class="mt-2">No approval history yet.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

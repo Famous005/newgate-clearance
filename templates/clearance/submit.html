@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Submit Clearance — NUM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-send me-2"></i>Submit Clearance Request</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-info-circle me-2"></i>Before You Submit
+      </div>
+      <ul class="small text-muted mb-4">
+        <li class="mb-2">Ensure you have paid your clearance fee at the bursary.</li>
+        <li class="mb-2">The bursary officer will confirm your payment before the workflow starts.</li>
+        <li class="mb-2">You will be notified as each unit approves your request.</li>
+        <li>You can track your progress from the dashboard at any time.</li>
+      </ul>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-4">
+          <label class="form-label">
+            <i class="bi bi-calendar me-1"></i>Academic Session
+          </label>
+          {% if sessions %}
+            <select name="session_id" class="form-select" required>
+              <option value="">— Select Academic Session —</option>
+              {% for session in sessions %}
+                <option value="{{ session.pk }}">
+                  {{ session.name }}
+                  {% if session.is_active %}(Current){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">
+              Select the session for which you are applying for clearance.
+            </div>
+          {% else %}
+            <div class="alert alert-warning small">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              No active session available.
+              Please contact the administrator.
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Student Info (read-only) -->
+        <div class="p-3 rounded mb-4"
+             style="background:#f8f9fa; border:1px solid var(--num-border);">
+          <div class="small fw-bold mb-2"
+               style="color:var(--num-navy);">
+            Your Details
+          </div>
+          <div class="row small text-muted">
+            <div class="col-6 mb-1">
+              <strong>Name:</strong>
+              {{ user.get_full_name }}
+            </div>
+            <div class="col-6 mb-1">
+              <strong>Matric No:</strong>
+              {{ user.matric_number }}
+            </div>
+            <div class="col-6">
+              <strong>Department:</strong>
+              {{ user.department }}
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-num w-100 py-2">
+          <i class="bi bi-send me-2"></i>Submit Clearance Request
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

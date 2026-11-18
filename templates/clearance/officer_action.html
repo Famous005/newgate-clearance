@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Review Clearance — NUM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-person-check me-2"></i>Review Clearance Request</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-7">
+
+    <!-- Student Details -->
+    <div class="num-card mb-4">
+      <div class="card-title">
+        <i class="bi bi-person me-2"></i>Student Information
+      </div>
+      <div class="row small">
+        <div class="col-6 mb-2">
+          <span class="text-muted">Full Name</span><br/>
+          <strong>
+            {{ approval.request.student.get_full_name }}
+          </strong>
+        </div>
+        <div class="col-6 mb-2">
+          <span class="text-muted">Matric Number</span><br/>
+          <strong>{{ approval.request.student.matric_number }}</strong>
+        </div>
+        <div class="col-6 mb-2">
+          <span class="text-muted">Department</span><br/>
+          <strong>{{ approval.request.student.department }}</strong>
+        </div>
+        <div class="col-6 mb-2">
+          <span class="text-muted">Session</span><br/>
+          <strong>{{ approval.request.session_year }}</strong>
+        </div>
+        <div class="col-6">
+          <span class="text-muted">Unit</span><br/>
+          <strong>{{ approval.unit.name }}</strong>
+        </div>
+        <div class="col-6">
+          <span class="text-muted">Submitted</span><br/>
+          <strong>
+            {{ approval.request.submitted_at|date:"d M Y" }}
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Form -->
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-check2-square me-2"></i>Your Decision
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-4">
+          <label class="form-label">Remarks (optional for approval,
+            required for decline)</label>
+          <textarea name="remarks"
+                    class="form-control"
+                    rows="4"
+                    placeholder="Add any notes or reason for decline...">
+          </textarea>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit"
+                  name="action"
+                  value="approve"
+                  class="btn btn-success flex-grow-1 py-2"
+                  onclick="return confirm(
+                    'Approve clearance for '
+                    + '{{ approval.request.student.get_full_name }}'
+                    + '?'
+                  )">
+            <i class="bi bi-check-lg me-2"></i>Approve
+          </button>
+          <button type="submit"
+                  name="action"
+                  value="decline"
+                  class="btn btn-danger flex-grow-1 py-2"
+                  onclick="return confirm(
+                    'Decline clearance for '
+                    + '{{ approval.request.student.get_full_name }}'
+                    + '? This will stop the process.'
+                  )">
+            <i class="bi bi-x-lg me-2"></i>Decline
+          </button>
+        </div>
+
+        <a href="{% url 'clearance:officer_queue' %}"
+           class="btn btn-outline-secondary w-100 mt-3">
+          <i class="bi bi-arrow-left me-2"></i>Back to Queue
+        </a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

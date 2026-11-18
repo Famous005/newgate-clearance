@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Payments — NUM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-cash-coin me-2"></i>Payment Confirmation</h1>
+</div>
+
+<!-- Pending Confirmations -->
+<div class="num-card mb-4">
+  <div class="card-title">
+    <i class="bi bi-hourglass-split me-2"></i>
+    Pending Confirmation
+    <span class="badge ms-2"
+          style="background:var(--num-gold); color:white;">
+      {{ pending.count }}
+    </span>
+  </div>
+
+  {% if pending %}
+    <div class="table-responsive">
+      <table class="table num-table">
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th>Matric No.</th>
+            <th>Department</th>
+            <th>Session</th>
+            <th>Submitted</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in pending %}
+            <tr>
+              <td>{{ req.student.get_full_name }}</td>
+              <td>{{ req.student.matric_number }}</td>
+              <td>{{ req.student.department }}</td>
+              <td>{{ req.session_year }}</td>
+              <td>{{ req.submitted_at|date:"d M Y" }}</td>
+              <td>
+                <form method="post"
+                      action="{% url 'clearance:bursary_confirm' req.pk %}"
+                      onsubmit="return confirm(
+                        'Confirm payment for {{ req.student.get_full_name }}?'
+                      )">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="btn btn-sm btn-success">
+                    <i class="bi bi-check-lg me-1"></i>Confirm
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="bi bi-check-all fs-2"></i>
+      <p class="mt-2">No pending confirmations.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Already Confirmed -->
+<div class="num-card">
+  <div class="card-title">
+    <i class="bi bi-check-circle me-2"></i>Already Confirmed
+  </div>
+  {% if confirmed %}
+    <div class="table-responsive">
+      <table class="table num-table">
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th>Matric No.</th>
+            <th>Session</th>
+            <th>Confirmed At</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in confirmed %}
+            <tr>
+              <td>{{ req.student.get_full_name }}</td>
+              <td>{{ req.student.matric_number }}</td>
+              <td>{{ req.session_year }}</td>
+              <td>{{ req.bursary_confirmed_at|date:"d M Y, g:i A" }}</td>
+              <td>
+                {% if req.status == 'cleared' %}
+                    <span class="status-badge badge-approved">Cleared</span>
+                {% elif req.status == 'declined' %}
+                    <span class="status-badge badge-declined">Declined</span>
+                {% else %}
+                    <span class="status-badge badge-approved">In Progress</span>
+                {% endif %}
+            </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-3 text-muted small">
+      No confirmed payments yet.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

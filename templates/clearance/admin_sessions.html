@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}Academic Sessions — NUM Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>
+    <i class="bi bi-calendar3 me-2"></i>Academic Sessions
+  </h1>
+</div>
+
+<div class="row g-4">
+
+  <!-- Current Sessions -->
+  <div class="col-md-7">
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-list-ol me-2"></i>All Sessions
+      </div>
+
+      {% if sessions %}
+        <div class="table-responsive">
+          <table class="table num-table">
+            <thead>
+              <tr>
+                <th>Session</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for session in sessions %}
+                <tr>
+                  <td>
+                    <strong>{{ session.name }}</strong>
+                  </td>
+                  <td>
+                    {% if session.is_active %}
+                      <span class="status-badge badge-approved">
+                        <i class="bi bi-check-circle me-1"></i>Active
+                      </span>
+                    {% else %}
+                      <span class="status-badge badge-pending">
+                        Inactive
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="small text-muted">
+                    {{ session.created_at|date:"d M Y" }}
+                  </td>
+                  <td>
+                    <div class="d-flex gap-2">
+                      {% if not session.is_active %}
+                        <form method="post"
+                              action="{% url 'clearance:activate_session' session.pk %}">
+                          {% csrf_token %}
+                          <button type="submit"
+                                  class="btn btn-num btn-sm">
+                            <i class="bi bi-toggle-on me-1"></i>
+                            Activate
+                          </button>
+                        </form>
+                      {% endif %}
+                      <form method="post"
+                            action="{% url 'clearance:delete_session' session.pk %}"
+                            onsubmit="return confirm(
+                              'Delete session {{ session.name }}?'
+                            )">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-danger btn-sm">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-calendar-x fs-2"></i>
+          <p class="mt-2">No sessions created yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Add Session -->
+  <div class="col-md-5">
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-plus-circle me-2"></i>Add New Session
+      </div>
+
+      <form method="post"
+            action="{% url 'clearance:add_session' %}"
+            novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">Session Name</label>
+          <input type="text"
+                 name="name"
+                 class="form-control"
+                 placeholder="e.g. 2024/2025"
+                 required/>
+          <div class="form-text">
+            Use the format YYYY/YYYY (e.g. 2024/2025).
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="form-check">
+            <input type="checkbox"
+                   name="is_active"
+                   id="is_active"
+                   class="form-check-input"/>
+            <label class="form-check-label" for="is_active">
+              Set as active session
+              <small class="text-muted d-block">
+                Only one session can be active at a time.
+                Activating this will deactivate the current one.
+              </small>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-num w-100">
+          <i class="bi bi-plus-lg me-2"></i>Add Session
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

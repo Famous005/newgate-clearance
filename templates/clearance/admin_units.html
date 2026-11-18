@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Manage Units — NUM Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-diagram-3 me-2"></i>Manage Clearance Units</h1>
+</div>
+
+<div class="row g-4">
+
+  <!-- Current Units -->
+  <div class="col-md-7">
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-list-ol me-2"></i>Current Units (in approval order)
+      </div>
+
+      {% if units %}
+        <div class="table-responsive">
+          <table class="table num-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Unit Name</th>
+                <th>Assigned Officer</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for unit in units %}
+                <tr>
+                  <td>
+                    <span class="badge"
+                          style="background:var(--num-navy);
+                                 color:white;
+                                 font-size:0.9rem;">
+                      {{ unit.order }}
+                    </span>
+                  </td>
+                  <td><strong>{{ unit.name }}</strong></td>
+                  <td>
+                    {{ unit.officer.get_full_name|default:"Unassigned" }}
+                  </td>
+                  <td>
+                    {% if unit.is_active %}
+                      <span class="status-badge badge-approved">
+                        Active
+                      </span>
+                    {% else %}
+                      <span class="status-badge badge-declined">
+                        Inactive
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <form method="post"
+                          action="{% url 'clearance:delete_unit' unit.pk %}"
+                          onsubmit="return confirm(
+                            'Delete unit {{ unit.name }}?'
+                          )">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="btn btn-danger btn-sm">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-diagram-3 fs-2"></i>
+          <p class="mt-2">No units configured yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Add Unit -->
+  <div class="col-md-5">
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-plus-circle me-2"></i>Add New Unit
+      </div>
+
+      <form method="post"
+            action="{% url 'clearance:add_unit' %}"
+            novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">Unit Name</label>
+          <input type="text"
+                 name="name"
+                 class="form-control"
+                 placeholder="e.g. Library"
+                 required/>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Approval Order</label>
+          <input type="number"
+                 name="order"
+                 class="form-control"
+                 placeholder="e.g. 1"
+                 min="1"
+                 required/>
+          <div class="form-text">
+            Lower number = earlier in the approval sequence.
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Assigned Officer</label>
+          <select name="officer" class="form-select">
+            <option value="">— Assign later —</option>
+            {% for officer in officers %}
+              <option value="{{ officer.pk }}">
+                {{ officer.get_full_name }}
+                ({{ officer.department|default:"No dept" }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-num w-100">
+          <i class="bi bi-plus-lg me-2"></i>Add Unit
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

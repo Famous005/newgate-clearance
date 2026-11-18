@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}All Requests — NUM Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-list-check me-2"></i>All Clearance Requests</h1>
+</div>
+
+<!-- Filter -->
+<div class="num-card mb-4">
+  <form method="get" class="d-flex gap-2 align-items-end flex-wrap">
+    <div>
+      <label class="form-label small">Filter by Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">All Statuses</option>
+        <option value="pending"
+          {% if status_filter == 'pending' %}selected{% endif %}>
+          Pending
+        </option>
+        <option value="cleared"
+          {% if status_filter == 'cleared' %}selected{% endif %}>
+          Cleared
+        </option>
+        <option value="declined"
+          {% if status_filter == 'declined' %}selected{% endif %}>
+          Declined
+        </option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-num btn-sm">
+      <i class="bi bi-funnel me-1"></i>Filter
+    </button>
+    <a href="{% url 'clearance:admin_requests' %}"
+       class="btn btn-outline-secondary btn-sm">
+      Clear
+    </a>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="num-card">
+  <div class="card-title">
+    <i class="bi bi-table me-2"></i>
+    Requests
+    <span class="badge ms-2"
+          style="background:var(--num-navy); color:white;">
+      {{ requests.count }}
+    </span>
+  </div>
+
+  {% if requests %}
+    <div class="table-responsive">
+      <table class="table num-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Matric No.</th>
+            <th>Department</th>
+            <th>Session</th>
+            <th>Bursary</th>
+            <th>Current Unit</th>
+            <th>Status</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in requests %}
+            <tr>
+              <td>{{ req.student.get_full_name }}</td>
+              <td>{{ req.student.matric_number }}</td>
+              <td>{{ req.student.department }}</td>
+              <td>{{ req.session_year }}</td>
+              <td>
+                {% if req.bursary_confirmed %}
+                  <i class="bi bi-check-circle-fill"
+                     style="color:var(--num-green);"></i>
+                {% else %}
+                  <i class="bi bi-clock"
+                     style="color:var(--num-gold);"></i>
+                {% endif %}
+              </td>
+              <td class="small">
+                {{ req.current_unit.name|default:"—" }}
+              </td>
+              <td>
+                <span class="status-badge badge-{{ req.status }}">
+                  {{ req.get_status_display }}
+                </span>
+              </td>
+              <td class="small">
+                {{ req.submitted_at|date:"d M Y" }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="bi bi-inbox fs-2"></i>
+      <p class="mt-2">No requests found.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

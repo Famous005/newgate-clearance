@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile — NUM Clearance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-person-circle me-2"></i>My Profile</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-pencil-square me-2"></i>Update Profile
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">First Name</label>
+            {{ form.first_name }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Last Name</label>
+            {{ form.last_name }}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Email Address</label>
+          {{ form.email }}
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Phone Number</label>
+            {{ form.phone }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Department</label>
+            {{ form.department }}
+          </div>
+        </div>
+
+        <!-- Read-only info -->
+        <div class="mb-3">
+          <label class="form-label">Matric Number</label>
+          <input type="text"
+                 class="form-control bg-light"
+                 value="{{ user.matric_number|default:'N/A' }}"
+                 readonly/>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Role</label>
+          <input type="text"
+                 class="form-control bg-light"
+                 value="{{ user.get_role_display }}"
+                 readonly/>
+        </div>
+
+        <button type="submit" class="btn btn-num">
+          <i class="bi bi-save me-2"></i>Save Changes
+        </button>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
