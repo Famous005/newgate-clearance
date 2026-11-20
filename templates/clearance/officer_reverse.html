@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Reverse Decision — NUM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>
+    <i class="bi bi-arrow-counterclockwise me-2"></i>
+    Reverse Decline Decision
+  </h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-7">
+
+    <div class="num-card mb-4"
+         style="border-left: 4px solid var(--num-red);">
+      <div class="card-title">
+        <i class="bi bi-exclamation-triangle me-2"
+           style="color:var(--num-red);"></i>
+        Previously Declined
+      </div>
+      <div class="row small">
+        <div class="col-6 mb-2">
+          <span class="text-muted">Student</span><br/>
+          <strong>
+            {{ approval.request.student.get_full_name }}
+          </strong>
+        </div>
+        <div class="col-6 mb-2">
+          <span class="text-muted">Matric Number</span><br/>
+          <strong>
+            {{ approval.request.student.matric_number }}
+          </strong>
+        </div>
+        <div class="col-6 mb-2">
+          <span class="text-muted">Department</span><br/>
+          <strong>
+            {{ approval.request.student.department }}
+          </strong>
+        </div>
+        <div class="col-6 mb-2">
+          <span class="text-muted">Unit</span><br/>
+          <strong>{{ approval.unit.name }}</strong>
+        </div>
+        <div class="col-12">
+          <span class="text-muted">Original Decline Reason</span><br/>
+          <span class="text-danger">
+            {{ approval.remarks }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="num-card">
+      <div class="card-title">
+        <i class="bi bi-check2-circle me-2"
+           style="color:var(--num-green);"></i>
+        Confirm Reversal to Approved
+      </div>
+
+      <div class="alert alert-info small mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        Use this only after the student has resolved the issue
+        at your unit physically. This action will be logged
+        with a timestamp.
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-4">
+          <label class="form-label">
+            Resolution Note (optional)
+          </label>
+          <textarea name="remarks"
+                    class="form-control"
+                    rows="3"
+                    placeholder="e.g. Student returned all books and paid outstanding fine.">
+          </textarea>
+        </div>
+        <div class="d-flex gap-3">
+          <button type="submit"
+                  class="btn btn-success flex-grow-1 py-2"
+                  onclick="return confirm(
+                    'Reverse decline and approve clearance for '
+                    + '{{ approval.request.student.get_full_name }}'
+                    + '?'
+                  )">
+            <i class="bi bi-check-lg me-2"></i>
+            Reverse to Approved
+          </button>
+          <a href="{% url 'clearance:officer_history' %}"
+             class="btn btn-outline-secondary flex-grow-1 py-2">
+            <i class="bi bi-arrow-left me-2"></i>Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

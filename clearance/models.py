@@ -92,6 +92,7 @@ class Approval(models.Model):
     STATUS_CHOICES = [
         ('pending',  'Pending'),
         ('approved', 'Approved'),
+        ('conditional',  'Conditional'),
         ('declined', 'Declined'),
     ]
 
@@ -112,7 +113,7 @@ class Approval(models.Model):
                     null=True, blank=True,
                     related_name='approval_actions'
                   )
-    status      = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status      = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     remarks     = models.TextField(blank=True, null=True)
     actioned_at = models.DateTimeField(null=True, blank=True)
 

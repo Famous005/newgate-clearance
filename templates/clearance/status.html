@@ -7,13 +7,20 @@
 </div>
 
 {% if cr %}
-  <!-- Summary Card -->
+
+  <!-- Summary Cards -->
   <div class="row g-3 mb-4">
     <div class="col-md-4">
-      <div class="stat-card {% if cr.status == 'cleared' %}green
-                             {% elif cr.status == 'declined' %}red
-                             {% else %}gold{% endif %}">
-        <div class="stat-number">{{ cr.get_status_display }}</div>
+      <div class="stat-card
+        {% if cr.status == 'cleared' %}green
+        {% elif cr.status == 'declined' or cr.status == 'conditional' %}red
+        {% else %}gold{% endif %}">
+        <div class="stat-number">
+          {% if cr.status == 'cleared' %}Cleared
+          {% elif cr.status == 'conditional' %}Conditional
+          {% elif cr.status == 'declined' %}Declined
+          {% else %}In Progress{% endif %}
+        </div>
         <div class="stat-label">Overall Status</div>
       </div>
     </div>
@@ -58,13 +65,10 @@
         <div class="col-md-6">
           <div class="p-3 rounded"
                style="border: 1px solid var(--num-border);
-                      background: {% if approval.status == 'approved' %}
-                        #f0fff4
-                      {% elif approval.status == 'declined' %}
-                        #fff5f5
-                      {% else %}
-                        #fffdf0
-                      {% endif %};">
+                      background:
+                        {% if approval.status == 'approved' %}#f0fff4
+                        {% elif approval.status == 'declined' %}#fff5f5
+                        {% else %}#fffdf0{% endif %};">
             <div class="d-flex align-items-start gap-3">
               <div style="font-size:1.6rem; margin-top:2px;">
                 {% if approval.status == 'approved' %}
@@ -88,7 +92,16 @@
                     Approved by {{ approval.officer.get_full_name }}
                     on {{ approval.actioned_at|date:"d M Y, g:i A" }}
                   {% elif approval.status == 'declined' %}
-                    Declined: {{ approval.remarks }}
+                    <span class="text-danger fw-bold">
+                      Declined:
+                    </span>
+                    {{ approval.remarks }}
+                    <br/>
+                    <span class="text-danger small">
+                      Visit this unit physically to resolve,
+                      then ask the officer to reverse
+                      the decision in the system.
+                    </span>
                   {% else %}
                     {% if cr.bursary_confirmed %}
                       Awaiting officer review
@@ -108,7 +121,7 @@
     </div>
   </div>
 
-  <!-- Certificate Download -->
+  <!-- Certificate Section -->
   {% if cr.status == 'cleared' %}
     <div class="num-card text-center py-4"
          style="border: 2px solid var(--num-green);">
@@ -123,7 +136,31 @@
       </p>
       <a href="{% url 'clearance:download_certificate' cr.pk %}"
          class="btn btn-num mt-2">
-        <i class="bi bi-download me-2"></i>Download Clearance Certificate
+        <i class="bi bi-download me-2"></i>
+        Download Clearance Certificate
+      </a>
+    </div>
+
+  {% elif cr.status == 'conditional' %}
+    <div class="num-card text-center py-4"
+         style="border: 2px solid var(--num-red);">
+      <i class="bi bi-exclamation-triangle-fill fs-1"
+         style="color:var(--num-red);"></i>
+      <h5 class="mt-3" style="color:var(--num-red);">
+        Clearance Conditional
+      </h5>
+      <p class="text-muted small mx-auto" style="max-width:500px;">
+        One or more units declined your clearance.
+        Download your conditional certificate, visit the
+        declined unit(s) physically to resolve the issue,
+        then ask the officer to reverse their decision
+        in the system. Once all units approve, your
+        status upgrades to Cleared automatically.
+      </p>
+      <a href="{% url 'clearance:download_certificate' cr.pk %}"
+         class="btn btn-warning mt-2">
+        <i class="bi bi-download me-2"></i>
+        Download Conditional Certificate
       </a>
     </div>
   {% endif %}
@@ -131,13 +168,17 @@
 {% else %}
   <div class="num-card text-center py-5">
     <i class="bi bi-send"
-       style="font-size:3rem; color:var(--num-navy); opacity:0.3;"></i>
+       style="font-size:3rem;
+              color:var(--num-navy);
+              opacity:0.3;"></i>
     <p class="mt-3 text-muted">
       You have not submitted a clearance request yet.
     </p>
-    <a href="{% url 'clearance:submit' %}" class="btn btn-num mt-2">
+    <a href="{% url 'clearance:submit' %}"
+       class="btn btn-num mt-2">
       <i class="bi bi-send me-2"></i>Submit Now
     </a>
   </div>
 {% endif %}
+
 {% endblock %}

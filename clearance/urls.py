@@ -25,6 +25,8 @@ urlpatterns = [
          views.officer_history,     name='officer_history'),
     path('officer/action/<int:pk>/',
          views.officer_action,      name='officer_action'),
+     path('officer/reverse/<int:pk>/',
+          views.officer_reverse_decline, name='officer_reverse'),
 
     # Admin
     path('admin/requests/',

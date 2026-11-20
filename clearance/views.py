@@ -75,11 +75,41 @@ HOD_ROUTING = {
 }
 
 def advance_workflow(clearance_request):
-    """Move request to next unit or mark as cleared if all approved."""
-    units = Unit.objects.filter(is_active=True).order_by('order')
+    """
+    Move request forward regardless of declines.
+    When all units have acted, determine final status:
+    - All approved       → cleared
+    - Any declined       → conditional
+    Officer can later change declined to approved to upgrade to cleared.
+    """
+    units     = Unit.objects.filter(is_active=True).order_by('order')
     unit_list = list(units)
 
-    for index, unit in enumerate(unit_list):
+    # ── Route HOD approvals first ─────────────────────────────────────────────
+    for unit in unit_list:
+        try:
+            approval = Approval.objects.get(
+                request=clearance_request,
+                unit=unit
+            )
+        except Approval.DoesNotExist:
+            continue
+
+        if unit.name == 'Head of Department':
+            dept         = clearance_request.student.department
+            hod_username = HOD_ROUTING.get(dept)
+            if hod_username:
+                try:
+                    hod = User.objects.get(username=hod_username)
+                    if approval.officer != hod:
+                        approval.officer = hod
+                        approval.save(update_fields=['officer'])
+                except User.DoesNotExist:
+                    pass
+
+    # ── Find the next pending unit and notify its officer ─────────────────────
+    next_pending = None
+    for unit in unit_list:
         try:
             approval = Approval.objects.get(
                 request=clearance_request,
@@ -89,39 +119,62 @@ def advance_workflow(clearance_request):
             continue
 
         if approval.status == 'pending':
-            # ── HOD Routing ───────────────────────────────────────────────
-            if unit.name == 'Head of Department':
-                dept         = clearance_request.student.department
-                hod_username = HOD_ROUTING.get(dept)
-                if hod_username:
-                    try:
-                        hod = User.objects.get(username=hod_username)
-                        if approval.officer != hod:
-                            approval.officer = hod
-                            approval.save(update_fields=['officer'])
-                    except User.DoesNotExist:
-                        pass
-            # ─────────────────────────────────────────────────────────────
+            next_pending = (unit, approval)
+            break
 
-            # Notify the officer that a request is waiting
-            officer = approval.officer or unit.officer
-            if officer:
-                notify_officer(
-                    officer=officer,
-                    student_name=clearance_request.student.get_full_name(),
-                    unit_name=unit.name
-                )
+    if next_pending:
+        unit, approval = next_pending
+        clearance_request.current_unit = unit
+        clearance_request.save(update_fields=['current_unit'])
 
-            clearance_request.current_unit = unit
-            clearance_request.save(update_fields=['current_unit'])
-            return
+        # Notify the officer
+        officer = approval.officer or unit.officer
+        if officer:
+            notify_officer(
+                officer=officer,
+                student_name=clearance_request.student.get_full_name(),
+                unit_name=unit.name
+            )
+        return
 
-    # All units approved — mark as cleared
-    clearance_request.status       = 'cleared'
+    # ── All units have acted (no more pending) ────────────────────────────────
     clearance_request.current_unit = None
-    clearance_request.completed_at = timezone.now()
-    clearance_request.save()
-    notify_cleared(clearance_request)
+
+    has_declined = Approval.objects.filter(
+        request=clearance_request,
+        status='declined'
+    ).exists()
+
+    if has_declined:
+        clearance_request.status = 'conditional'
+        clearance_request.completed_at = timezone.now()
+        clearance_request.save()
+        # Notify student
+        declined_units = Approval.objects.filter(
+            request=clearance_request,
+            status='declined'
+        ).select_related('unit')
+        unit_names = ', '.join(
+            [a.unit.name for a in declined_units]
+        )
+        from .notifications import notify
+        notify(
+            user=clearance_request.student,
+            title='Clearance Conditional — Action Required',
+            message=(
+                f'All units have reviewed your clearance request. '
+                f'However, the following unit(s) declined: {unit_names}. '
+                f'Please visit the declined unit(s) physically to resolve '
+                f'the issue. Once resolved, the officer will update your '
+                f'status in the system. Your certificate is available but '
+                f'marked as CONDITIONAL until all units approve.'
+            )
+        )
+    else:
+        clearance_request.status       = 'cleared'
+        clearance_request.completed_at = timezone.now()
+        clearance_request.save()
+        notify_cleared(clearance_request)
 
 
 # ── Student Views ─────────────────────────────────────────────────────────────
@@ -231,11 +284,16 @@ def download_certificate(request, pk):
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
     cr = get_object_or_404(
-        ClearanceRequest,
-        pk=pk,
-        student=request.user,
-        status='cleared'
+    ClearanceRequest,
+    pk=pk,
+    student=request.user,
     )
+    if cr.status not in ['cleared', 'conditional']:
+        messages.error(
+            request,
+            'Certificate is not available yet.'
+        )
+        return redirect('clearance:status')
 
     approvals = cr.approvals.select_related(
         'unit', 'officer'
@@ -357,6 +415,24 @@ def download_certificate(request, pk):
         color=NUM_GOLD, spaceAfter=0.3*cm
     ))
 
+    # Conditional banner
+    if cr.status == 'conditional':
+        banner_style = ParagraphStyle(
+            'banner',
+            fontSize=11,
+            fontName='Helvetica-Bold',
+            textColor=colors.white,
+            alignment=TA_CENTER,
+            backColor=colors.HexColor('#dc3545'),
+            spaceAfter=8,
+            spaceBefore=4,
+            borderPadding=8,
+        )
+        story.append(Paragraph(
+            'CONDITIONAL — PENDING PHYSICAL RESOLUTION AT DECLINED UNIT(S)',
+            banner_style
+        ))
+
     # Certificate title
     story.append(Paragraph('FINAL-YEAR CLEARANCE CERTIFICATE', subtitle_style))
 
@@ -439,11 +515,19 @@ def download_certificate(request, pk):
             appr.actioned_at.strftime('%d %b %Y, %I:%M %p')
             if appr.actioned_at else '—'
         )
+        status_text = appr.status.upper()
+        if appr.status == 'declined':
+            status_text = f'DECLINED — {appr.remarks}'
+
         approval_rows.append([
             Paragraph(str(i), value_style),
             Paragraph(appr.unit.name, value_style),
             Paragraph(officer_name, value_style),
-            Paragraph(date_str, value_style),
+            Paragraph(
+                date_str if appr.status != 'declined'
+                else f'DECLINED: {appr.remarks}',
+                value_style
+            ),
         ])
 
     approval_table = Table(
@@ -465,6 +549,16 @@ def download_certificate(request, pk):
     ]))
     story.append(approval_table)
     story.append(Spacer(1, 0.8*cm))
+
+    # Highlight declined rows in red
+    for row_idx, appr in enumerate(approvals, 1):
+        if appr.status == 'declined':
+            approval_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, row_idx), (-1, row_idx),
+                colors.HexColor('#f8d7da')),
+                ('TEXTCOLOR',  (0, row_idx), (-1, row_idx),
+                colors.HexColor('#58151c')),
+            ]))
 
     # Validity notice
     story.append(HRFlowable(
@@ -655,17 +749,22 @@ def officer_action(request, pk):
             approval.remarks     = remarks
             approval.actioned_at = timezone.now()
             approval.save()
-            approval.request.status = 'declined'
-            approval.request.save()
+
+            # Notify student of decline but continue workflow
             notify_unit_declined(
                 clearance_request=approval.request,
                 unit_name=approval.unit.name,
                 remarks=remarks
             )
+
+            # Continue workflow to next unit
+            advance_workflow(approval.request)
+
             messages.warning(
                 request,
                 f'Clearance declined for '
-                f'{approval.request.student.get_full_name()}.'
+                f'{approval.request.student.get_full_name()}. '
+                f'Workflow continues to remaining units.'
             )
 
         return redirect('clearance:officer_queue')
@@ -673,6 +772,78 @@ def officer_action(request, pk):
     return render(request, 'clearance/officer_action.html', {
         'approval': approval
     })
+
+@login_required
+@role_required('unit_officer')
+def officer_reverse_decline(request, pk):
+    """Allow an officer to change their decline to approved."""
+    approval = get_object_or_404(Approval, pk=pk)
+
+    # Security check
+    if approval.officer != request.user:
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+
+    if approval.status != 'declined':
+        messages.error(
+            request,
+            'This approval is not declined and cannot be reversed.'
+        )
+        return redirect('clearance:officer_history')
+
+    if request.method == 'POST':
+        remarks = request.POST.get('remarks', '').strip()
+        approval.status      = 'approved'
+        approval.remarks     = f'[Reversed] {remarks}' if remarks \
+                               else '[Reversed after physical resolution]'
+        approval.actioned_at = timezone.now()
+        approval.save()
+
+        # Check if all units are now approved
+        cr = approval.request
+        still_declined = Approval.objects.filter(
+            request=cr,
+            status='declined'
+        ).exists()
+
+        still_pending = Approval.objects.filter(
+            request=cr,
+            status='pending'
+        ).exists()
+
+        if not still_declined and not still_pending:
+            # Upgrade to fully cleared
+            cr.status       = 'cleared'
+            cr.completed_at = timezone.now()
+            cr.save()
+            notify_cleared(cr)
+            messages.success(
+                request,
+                f'{cr.student.get_full_name()} is now fully cleared!'
+            )
+        elif not still_declined:
+            # Still pending at some units but no declines
+            cr.status = 'pending'
+            cr.save()
+            messages.success(
+                request,
+                f'Decision reversed. '
+                f'Workflow continues for '
+                f'{cr.student.get_full_name()}.'
+            )
+        else:
+            messages.success(
+                request,
+                f'Decision reversed successfully.'
+            )
+
+        return redirect('clearance:officer_history')
+
+    return render(
+        request,
+        'clearance/officer_reverse.html',
+        {'approval': approval}
+    )
 
 # ── Admin Views ───────────────────────────────────────────────────────────────
 
