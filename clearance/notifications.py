@@ -21,7 +21,7 @@ def notify(user, title, message, send_email=True):
                 subject=f'[NUM Clearance] {title}',
                 message=f'Dear {user.get_full_name()},\n\n{message}\n\n'
                         f'Log in to track your clearance progress:\n'
-                        f'http://127.0.0.1:8080/\n\n'
+                        f'https://newgate-clearance.onrender.com/\n\n'
                         f'Newgate University Minna\n'
                         f'Explore to Excel',
                 from_email=settings.DEFAULT_FROM_EMAIL,
