@@ -64,7 +64,7 @@ class Command(BaseCommand):
         # ── Officers and Units (in approval sequence order) ───────────────────
         officers_units = [
             # (username, first, last, dept, email, order, unit_name)
-            ('lab_officer',      'Ahmed',    'Suleiman',
+            ('lab_officer',      'Laboratory',    'Office',
              'Laboratory',
              'ahmed.suleiman@newgate.edu.ng',
              1, 'Laboratory Unit'),
@@ -79,9 +79,9 @@ class Command(BaseCommand):
              'dean.fcit@newgate.edu.ng',
              3, 'Dean of Faculty'),
 
-            ('security_officer', 'Musa',     'Ibrahim',
+            ('security_officer', 'Hussaini',     'Nuhu',
              'Security Unit',
-             'musa.ibrahim@newgate.edu.ng',
+             'hussaini.nuhu@newgate.edu.ng',
              4, 'Security Unit'),
 
             ('library_officer',  'Khadijat', 'Mohammed',
@@ -89,7 +89,7 @@ class Command(BaseCommand):
              'khadijat.mohammed@newgate.edu.ng',
              5, 'Library Unit'),
 
-            ('medical_officer',  'Usman',    'Bello',
+            ('medical_officer',  'Clinic',    'Office',
              'Medical Unit',
              'usman.bello@newgate.edu.ng',
              6, 'University Clinic'),
@@ -99,7 +99,7 @@ class Command(BaseCommand):
              'oladele.oluwakemi@newgate.edu.ng',
              7, 'Directorate of Estate & Physical Planning'),
 
-            ('affairs_officer',  'Abubakar', 'Sadiq',
+            ('affairs_officer',  'Samuel', 'Olatunbosun',
              'Directorate of Student Affairs',
              'abubakar.sadiq@newgate.edu.ng',
              8, 'Directorate of Student Affairs'),
